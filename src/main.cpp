@@ -92,40 +92,42 @@ __attribute__((section (".entry_point"))) void main(void)  {
 	//Setup timers for 4-phase interleaved PWM
 	TIM2_3_TYPE TIM2(TIM2_BASE_ADDR);
      TIM2.setTopValue(120);
-     TIM2.setCompValue(TIM2_3_TYPE::CCR_CH2, 40);
+     TIM2.setCompValue(TIM2_3_TYPE::CCR_CH2, 20);
      TIM2.setupPWM();
      TIM2.startTimer();
 
      TIM2_3_TYPE TIM3(TIM3_BASE_ADDR);
      TIM3.setTopValue(120);
-     TIM3.setCompValue(TIM2_3_TYPE::CCR_CH2, 40);
+     TIM3.setCompValue(TIM2_3_TYPE::CCR_CH2, 20);
      TIM3.setupPWM();
      TIM3.startTimer();
 
      TIM16_17_TYPE TIM16(TIM16_BASE_ADDR);
      TIM16.setTopValue(120);
-     TIM16.setCompValue(TIM16_17_TYPE::CCR_CH1, 40);
+     TIM16.setCompValue(TIM16_17_TYPE::CCR_CH1, 20);
      TIM16.setupPWM();
      TIM16.startTimer();
+
+     TIM16_17_TYPE TIM17(TIM17_BASE_ADDR);
+     TIM17.setTopValue(120);
+     TIM17.setCompValue(TIM16_17_TYPE::CCR_CH1, 20);
+     TIM17.setupPWM();
+     TIM17.startTimer();
 
      volatile uint32_t* tim2_cnt = TIM2.getCountReg();
      volatile uint32_t* tim3_cnt = TIM3.getCountReg();
      volatile uint32_t* tim16_cnt = TIM16.getCountReg();
+     volatile uint32_t* tim17_cnt = TIM17.getCountReg();
 
      //Sync counters
      *tim2_cnt = 0;
-     *tim3_cnt = (40 + 4);
-     *tim16_cnt = (80 + 8);
+     *tim3_cnt = (30 + 4);
+     *tim16_cnt = (60 + 8);
+     *tim17_cnt = (90 + 12);
 
-     volatile uint32_t tim2_val = 0;
-     volatile uint32_t tim3_val = 0;
-     volatile uint32_t tim16_val = 0;
+
 	//Infinite loop
-	while(1) {
-          tim2_val = *tim2_cnt;
-          tim3_val = *tim3_cnt;
-          tim16_val = *tim16_cnt;
-     }
+	while(1) { }
 }
 
 
