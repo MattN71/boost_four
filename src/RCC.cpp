@@ -3,7 +3,7 @@
 
 RCC::RCC() {
 	REG = RCC_BASE_ADDR;
-	
+
 	//Enable MCO on PA8 for debugging
 	REG[CFGR] |= BIT30 | BIT29 | BIT28; //MCO output prescaler is clock/128
 	REG[CFGR] |= BIT26; //System clock to MCO pin
@@ -24,9 +24,9 @@ void RCC::init(void) {
 
 	//Enable AHB/APB busses
 	REG[AHBENR] |= BIT17 | BIT18 | BIT19 | BIT0; //GPIO A, B, C; DMA
-	REG[APB2ENR] |= BIT14 | BIT9 | BIT11 | BIT16 | BIT17 | BIT18; //USART1, ADC and Timers,
+	REG[APB2ENR] |= BIT14 | BIT9 | BIT11 | BIT16 | BIT17 | BIT18; //USART1, ADC and Timers
 	REG[APB1ENR] |= BIT8 | BIT5 | BIT4 | BIT1 | BIT0; //Timers
 
 	//Set system clock as clock input to USART1
-	REG[CFGR3] |= BIT0; 
+	REG[CFGR3] |= BIT0;
 }

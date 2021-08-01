@@ -1,5 +1,4 @@
-#ifndef gpio_h
-#define gpio_h
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -18,6 +17,4 @@ int32_t initPin(volatile uint32_t *gpio_base, uint8_t pin, enum GPIO_MODE mode, 
 int32_t initPinAlt(volatile uint32_t *gpio_base, uint8_t pin, enum GPIO_ALT_FUNC func);
 int32_t drivePin(volatile uint32_t *gpio_base, uint8_t pin, bool val);
 int32_t readPin(volatile uint32_t *gpio_base, uint8_t pin);
-
-
-#endif //gpio_h
+int32_t drivePinFast(volatile uint32_t *gpio_base, uint8_t pin, bool val);

@@ -72,6 +72,8 @@ void DMA_CH_TYPE::setPriority(dma_priority_type prior) {
 		case PRIORITY_VERY_HIGH:
 			*CCR |= 0x3 << 12;
 			break;
+		case PRIORITY_LOW:
+			break;
 	}
 }
 
@@ -84,6 +86,8 @@ void DMA_CH_TYPE::setMemSize(dma_size_type size) {
 		case SIZE_32_BIT:
 			*CCR |= 0x2 << 10;
 			break;
+		case SIZE_8_BIT:
+			break;
 	}
 }
 
@@ -95,6 +99,8 @@ void DMA_CH_TYPE::setPerifSize(dma_size_type size) {
 			break;
 		case SIZE_32_BIT:
 			*CCR |= 0x2 << 8;
+			break;
+		case SIZE_8_BIT:
 			break;
 	}
 }
@@ -157,4 +163,3 @@ void DMA_CH_TYPE::enableChannel(void) {
 void DMA_CH_TYPE::disableChannel(void) {
 	*CCR &= ~(0x1);
 }
-

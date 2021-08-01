@@ -1,11 +1,7 @@
 #pragma once
 
-
 #define HIGH true
 #define LOW false
-
-
-
 
 //Basic bitwise defines
 #define BIT0 (1 << 0)
@@ -41,11 +37,8 @@
 #define BIT30 (1 << 30)
 #define BIT31 (1 << 31)
 
-
-
 //Memory offsets for device peripherals
 //STM32F071x8 & STM32F071xB
-
 #define GPIO_A_BASE_ADDR ((volatile uint32_t *)0x48000000)
 #define GPIO_B_BASE_ADDR ((volatile uint32_t *)0x48000400)
 #define GPIO_C_BASE_ADDR ((volatile uint32_t *)0x48000800)
@@ -55,8 +48,6 @@
 #define USART1_BASE_ADDR ((volatile uint32_t *)0x40013800)
 #define USART2_BASE_ADDR ((volatile uint32_t *)0x40004400)
 #define FLASH_BASE_ADDR ((volatile uint32_t *)0x40022000)
-
 #define TIM2_BASE_ADDR ((volatile uint32_t *)0x40000000)
 #define TIM3_BASE_ADDR ((volatile uint32_t *)0x40000400)
-
 #define NVIC_BASE_ADDR ((volatile uint32_t *)0xE000E100)

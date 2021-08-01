@@ -4,7 +4,7 @@ program_OBJS := $(wildcard build/*.o)
 
 TOOLCHAIN := arm-none-eabi
 
-CFLAGS := -mfloat-abi=soft -mcpu=cortex-m0 -mthumb -O0 -Wall -Wextra -std=c++17 --specs=nosys.specs -nostdlib -fno-unwind-tables -fno-exceptions -fno-non-call-exceptions -fno-rtti  -fno-use-cxa-atexit -ffreestanding -g3
+CFLAGS := -mfloat-abi=soft -mcpu=cortex-m0 -mthumb -O3 -Wall -Wextra -std=c++17 --specs=nosys.specs -nostdlib -fno-unwind-tables -fno-exceptions -fno-non-call-exceptions -fno-rtti  -fno-use-cxa-atexit -ffreestanding -g3
 LDFLAGS := -lgcc
 
 .PHONY: all
@@ -31,12 +31,12 @@ asm: all
 
 .PHONY: flash
 flash: all
-	openocd -f cfg/jlink.cfg -f cfg/stm32f0x.cfg -c "program build/$(program_name).elf verify reset exit"
+	openocd -f cfg/jlink.cfg -f cfg/linux_stm32f0x.cfg -c "program build/$(program_name).elf verify reset exit"
 #	openocd -f cfg/jlink.cfg -f cfg/stm32f0x.cfg -c "program build/$(program_name).elf reset exit"
 
 .PHONY: debug
 debug:
-	openocd -f cfg/jlink.cfg -f cfg/stm32f0x.cfg
+	openocd -f cfg/jlink.cfg -f cfg/linux_stm32f0x.cfg
 
 .PHONY: print
 print:
