@@ -39,15 +39,28 @@
 
 //Memory offsets for device peripherals
 //STM32F071x8 & STM32F071xB
+
+//GPIO
 #define GPIO_A_BASE_ADDR ((volatile uint32_t *)0x48000000)
 #define GPIO_B_BASE_ADDR ((volatile uint32_t *)0x48000400)
 #define GPIO_C_BASE_ADDR ((volatile uint32_t *)0x48000800)
+
+//Analog
 #define DAC_BASE_ADDR ((volatile uint32_t *)0x40007400)
 #define ADC_BASE_ADDR ((volatile uint32_t *)0x40012400)
+
+//System
 #define RCC_BASE_ADDR ((volatile uint32_t *)0x40021000)
+#define FLASH_BASE_ADDR ((volatile uint32_t *)0x40022000)
+#define NVIC_BASE_ADDR ((volatile uint32_t *)0xE000E100)
+
+//Comms
 #define USART1_BASE_ADDR ((volatile uint32_t *)0x40013800)
 #define USART2_BASE_ADDR ((volatile uint32_t *)0x40004400)
-#define FLASH_BASE_ADDR ((volatile uint32_t *)0x40022000)
+
+//Timers
 #define TIM2_BASE_ADDR ((volatile uint32_t *)0x40000000)
 #define TIM3_BASE_ADDR ((volatile uint32_t *)0x40000400)
-#define NVIC_BASE_ADDR ((volatile uint32_t *)0xE000E100)
+#define TIM15_BASE_ADDR ((volatile uint32_t *)0x40014000)
+#define TIM16_BASE_ADDR ((volatile uint32_t *)0x40014400)
+#define TIM17_BASE_ADDR ((volatile uint32_t *)0x40014800)

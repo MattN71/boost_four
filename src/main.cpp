@@ -5,6 +5,8 @@
 #include "RCC.h"
 #include "device_offsets.h"
 #include "timer2-3.h"
+#include "timer16_17.h"
+
 
 
 
@@ -100,19 +102,29 @@ __attribute__((section (".entry_point"))) void main(void)  {
      TIM3.setupPWM();
      TIM3.startTimer();
 
+     TIM16_17_TYPE TIM16(TIM16_BASE_ADDR);
+     TIM16.setTopValue(120);
+     TIM16.setCompValue(TIM16_17_TYPE::CCR_CH1, 40);
+     TIM16.setupPWM();
+     TIM16.startTimer();
+
      volatile uint32_t* tim2_cnt = TIM2.getCountReg();
      volatile uint32_t* tim3_cnt = TIM3.getCountReg();
+     volatile uint32_t* tim16_cnt = TIM16.getCountReg();
 
-     //Set counters to be equal
+     //Sync counters
      *tim2_cnt = 0;
-     *tim3_cnt = (60 + 4);
+     *tim3_cnt = (40 + 4);
+     *tim16_cnt = (80 + 8);
 
-     //TIM3.setCountValue(0);
-     //TIM2.setCountValue(0);
-
+     volatile uint32_t tim2_val = 0;
+     volatile uint32_t tim3_val = 0;
+     volatile uint32_t tim16_val = 0;
 	//Infinite loop
 	while(1) {
-          uint16_t i = TIM2.getCount();
+          tim2_val = *tim2_cnt;
+          tim3_val = *tim3_cnt;
+          tim16_val = *tim16_cnt;
      }
 }
 
