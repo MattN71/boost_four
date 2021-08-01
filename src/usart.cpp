@@ -90,3 +90,16 @@ void USART_TYPE::sendBytes(size_t numBytes, uint8_t* start) {
 		REG[TDR] = *start++;
 	}
 }
+
+bool USART_TYPE::readAvailable(void) {
+	return (REG[ISR] & BIT5);
+}
+
+
+char USART_TYPE::readChar(void) {
+	if (REG[ISR] & BIT5) {
+		return REG[RDR];
+	} else {
+		return '\0';
+	}
+}

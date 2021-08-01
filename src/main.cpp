@@ -72,12 +72,6 @@ void init_io(void) {
 }
 
 
-
-
-
-
-
-
 //Main function, section attribute makes sure it is at the beginning of .text
 __attribute__((section (".entry_point"))) void main(void)  {
 
@@ -132,7 +126,23 @@ __attribute__((section (".entry_point"))) void main(void)  {
      UART1.println(message);
 
 	//Infinite loop
-	while(1) { }
+     uint16_t comp_val = 30;
+     char receieved = 'x';
+	while(1) {
+          if (UART1.readAvailable()) {
+               receieved = UART1.readChar();
+               if (receieved == 'm' && comp_val > 0) {
+                    comp_val -= 1;
+               } else if (receieved == 'p' && comp_val < 120) {
+                    comp_val += 1;
+               }
+               TIM2.setCompValue(TIM2_3_TYPE::CCR_CH2, comp_val);
+               TIM3.setCompValue(TIM2_3_TYPE::CCR_CH2, comp_val);
+               TIM16.setCompValue(TIM16_17_TYPE::CCR_CH1, comp_val);
+               TIM17.setCompValue(TIM16_17_TYPE::CCR_CH1, comp_val);
+          }
+
+     }
 }
 
 

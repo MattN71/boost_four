@@ -42,4 +42,7 @@ public:
      void println(char *start);
      void sendBytes(size_t numBytes, uint8_t* start);
 
+     //Read functions
+     bool readAvailable(void);
+     char readChar(void);
 };
