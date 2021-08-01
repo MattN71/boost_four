@@ -57,6 +57,8 @@
 //Comms
 #define USART1_BASE_ADDR ((volatile uint32_t *)0x40013800)
 #define USART2_BASE_ADDR ((volatile uint32_t *)0x40004400)
+#define USART3_BASE_ADDR ((volatile uint32_t *)0x40004800)
+#define USART4_BASE_ADDR ((volatile uint32_t *)0x40004C00)
 
 //Timers
 #define TIM2_BASE_ADDR ((volatile uint32_t *)0x40000000)

@@ -42,3 +42,7 @@ debug:
 print:
 	$(info	srcs are $(program_SRCS))
 	$(info	objs are $(program_OBJS))
+
+
+# Serial port
+# sudo picocom --baud 2000000 --flow n --parity n --databits 8 --stopbits 1 /dev/ttyUSB0

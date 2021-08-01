@@ -6,7 +6,7 @@
 #include "device_offsets.h"
 #include "timer2-3.h"
 #include "timer16_17.h"
-
+#include "usart.h"
 
 
 
@@ -92,25 +92,25 @@ __attribute__((section (".entry_point"))) void main(void)  {
 	//Setup timers for 4-phase interleaved PWM
 	TIM2_3_TYPE TIM2(TIM2_BASE_ADDR);
      TIM2.setTopValue(120);
-     TIM2.setCompValue(TIM2_3_TYPE::CCR_CH2, 20);
+     TIM2.setCompValue(TIM2_3_TYPE::CCR_CH2, 30);
      TIM2.setupPWM();
      TIM2.startTimer();
 
      TIM2_3_TYPE TIM3(TIM3_BASE_ADDR);
      TIM3.setTopValue(120);
-     TIM3.setCompValue(TIM2_3_TYPE::CCR_CH2, 20);
+     TIM3.setCompValue(TIM2_3_TYPE::CCR_CH2, 30);
      TIM3.setupPWM();
      TIM3.startTimer();
 
      TIM16_17_TYPE TIM16(TIM16_BASE_ADDR);
      TIM16.setTopValue(120);
-     TIM16.setCompValue(TIM16_17_TYPE::CCR_CH1, 20);
+     TIM16.setCompValue(TIM16_17_TYPE::CCR_CH1, 30);
      TIM16.setupPWM();
      TIM16.startTimer();
 
      TIM16_17_TYPE TIM17(TIM17_BASE_ADDR);
      TIM17.setTopValue(120);
-     TIM17.setCompValue(TIM16_17_TYPE::CCR_CH1, 20);
+     TIM17.setCompValue(TIM16_17_TYPE::CCR_CH1, 30);
      TIM17.setupPWM();
      TIM17.startTimer();
 
@@ -125,6 +125,11 @@ __attribute__((section (".entry_point"))) void main(void)  {
      *tim16_cnt = (60 + 8);
      *tim17_cnt = (90 + 12);
 
+     USART_TYPE UART1(USART_TYPE::USART1_PERIF, USART_TYPE::BAUD_2M);
+
+     char message[] = "Hello World!";
+
+     UART1.println(message);
 
 	//Infinite loop
 	while(1) { }
