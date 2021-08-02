@@ -6,7 +6,7 @@
 
 //Do not use
 TIM16_17_TYPE::TIM16_17_TYPE() {
-     REG = TIM15_BASE_ADDR;
+     REG = TIM16_BASE_ADDR;
 }
 
 TIM16_17_TYPE::TIM16_17_TYPE(volatile uint32_t *base_address) {

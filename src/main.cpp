@@ -7,6 +7,7 @@
 #include "timer2-3.h"
 #include "timer16_17.h"
 #include "usart.h"
+#include "timer15.h"
 
 
 
@@ -113,6 +114,7 @@ __attribute__((section (".entry_point"))) void main(void)  {
      volatile uint32_t* tim16_cnt = TIM16.getCountReg();
      volatile uint32_t* tim17_cnt = TIM17.getCountReg();
 
+
      //Sync counters
      *tim2_cnt = 0;
      *tim3_cnt = (30 + 4);
@@ -122,18 +124,30 @@ __attribute__((section (".entry_point"))) void main(void)  {
      USART_TYPE UART1(USART_TYPE::USART1_PERIF, USART_TYPE::BAUD_2M);
 
      char message[] = "Hello World!";
-
      UART1.println(message);
+
+     TIM15_TYPE TIM15;
+     TIM15.setTopValue(125);
+     TIM15.setCompValue(TIM15_TYPE::CCR_CH1, 10);
+     TIM15.setupTriggerOut();
+     TIM15.startTimer();
+     initPin(GPIO_B_BASE_ADDR, 14, GPIO_MODE_ALTERNATE, GPIO_DRIVE_PP, GPIO_RESISTOR_NONE, GPIO_SPEED_HIGH);
+     initPinAlt(GPIO_B_BASE_ADDR, 14, AF1);
+     volatile uint32_t* tim15_cnt = TIM15.getCountReg();
 
 	//Infinite loop
      uint16_t comp_val = 30;
+     uint16_t tim15_val = 0;
      char receieved = 'x';
 	while(1) {
+
+          tim15_val = *tim15_cnt;
+
           if (UART1.readAvailable()) {
                receieved = UART1.readChar();
                if (receieved == 'm' && comp_val > 0) {
                     comp_val -= 1;
-               } else if (receieved == 'p' && comp_val < 120) {
+               } else if (receieved == 'p' && comp_val <= 120) {
                     comp_val += 1;
                }
                TIM2.setCompValue(TIM2_3_TYPE::CCR_CH2, comp_val);
