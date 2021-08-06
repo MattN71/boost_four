@@ -18,3 +18,4 @@ int32_t initPinAlt(volatile uint32_t *gpio_base, uint8_t pin, enum GPIO_ALT_FUNC
 int32_t drivePin(volatile uint32_t *gpio_base, uint8_t pin, bool val);
 int32_t readPin(volatile uint32_t *gpio_base, uint8_t pin);
 int32_t drivePinFast(volatile uint32_t *gpio_base, uint8_t pin, bool val);
+void togglePinFast(volatile uint32_t *gpio_base, uint8_t pin);

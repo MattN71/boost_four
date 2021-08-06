@@ -33,6 +33,7 @@ void TIM15_TYPE::setupTriggerOut() {
      REG[CCER] |= BIT0; //Enable CCR1 output
      REG[BDTR] |= BIT15; //Master enable outputs
      REG[CR2] |= BIT6; //Use CCR1 signal for TRGO
+     //REG[CR2] |= BIT5; //Use Update event for TRGO
 }
 
 

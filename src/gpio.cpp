@@ -57,6 +57,16 @@ int32_t drivePinFast(volatile uint32_t *gpio_base, uint8_t pin, bool val) {
     return 0;
 }
 
+void togglePinFast(volatile uint32_t *gpio_base, uint8_t pin) {
+
+	if (gpio_base[5] & (1 << pin)) {
+		//Reset bit
+		gpio_base[6] |= ( (1 << pin) << 16);
+	} else {
+		//Set bit
+		gpio_base[6] |= (1 << pin);
+	}
+}
 
 
 

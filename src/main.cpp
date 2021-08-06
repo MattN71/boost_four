@@ -8,8 +8,9 @@
 #include "timer16_17.h"
 #include "usart.h"
 #include "timer15.h"
+#include "adc.h"
 
-
+extern const uint8_t thermistor_map[];
 
 void init_io(void) {
 
@@ -76,6 +77,8 @@ void init_io(void) {
 //Main function, section attribute makes sure it is at the beginning of .text
 __attribute__((section (".entry_point"))) void main(void)  {
 
+
+
      RCC RCC1;
 
      //Setup system clock, peripheral clocks
@@ -84,6 +87,7 @@ __attribute__((section (".entry_point"))) void main(void)  {
 	//Setup GPIO for I/O and alternate functions
 	init_io();
 
+     /*
 	//Setup timers for 4-phase interleaved PWM
 	TIM2_3_TYPE TIM2(TIM2_BASE_ADDR);
      TIM2.setTopValue(120);
@@ -114,35 +118,114 @@ __attribute__((section (".entry_point"))) void main(void)  {
      volatile uint32_t* tim16_cnt = TIM16.getCountReg();
      volatile uint32_t* tim17_cnt = TIM17.getCountReg();
 
-
      //Sync counters
      *tim2_cnt = 0;
      *tim3_cnt = (30 + 4);
      *tim16_cnt = (60 + 8);
      *tim17_cnt = (90 + 12);
 
+     */
+
      USART_TYPE UART1(USART_TYPE::USART1_PERIF, USART_TYPE::BAUD_2M);
 
      char message[] = "Hello World!";
      UART1.println(message);
 
+     char fault_message[] = "ADC Overrun!";
+
+
      TIM15_TYPE TIM15;
-     TIM15.setTopValue(125);
-     TIM15.setCompValue(TIM15_TYPE::CCR_CH1, 10);
+     TIM15.setTopValue(124);
+     TIM15.setCompValue(TIM15_TYPE::CCR_CH1, 60);
      TIM15.setupTriggerOut();
      TIM15.startTimer();
      initPin(GPIO_B_BASE_ADDR, 14, GPIO_MODE_ALTERNATE, GPIO_DRIVE_PP, GPIO_RESISTOR_NONE, GPIO_SPEED_HIGH);
      initPinAlt(GPIO_B_BASE_ADDR, 14, AF1);
-     volatile uint32_t* tim15_cnt = TIM15.getCountReg();
+
+
+     ADC_TYPE ADC;
+     ADC.selectChannels(0xFF); //CH0-CH7
+     ADC.setConversionMode(ADC_TYPE::ADC_DISCONTINUOUS_MODE);
+     ADC.setTrigger(ADC_TYPE::ADC_TRG4, ADC_TYPE::ADC_RISING_EDGE);
+     ADC.setClockSource(ADC_TYPE::ADC_SYNC_DIV4);
+     ADC.setSampleTime(ADC_TYPE::ADC_20_CYCLE);
+     ADC.setDMAMode(ADC_TYPE::ADC_DMA_CIRCULAR);
+     //ADC.enableInterrupt(ADC_TYPE::ADC_END_OF_CONVERSION, true);
+     //ADC.enableInterrupt(ADC_TYPE::ADC_END_OF_SEQUENCE, true);
+
+     //Enable ADC interrupt in NVIC-ISER register
+     //*(NVIC_BASE_ADDR) |= BIT12;
+
+     //Enable DMA-CH1 interrupt in NVIC-ISER register
+     *(NVIC_BASE_ADDR) |= BIT9;
+
+
+     uint16_t adc_data[8];
+     enum adc_data_index {
+         iPhase1 = 0,
+         thermistor = 1,
+         iPhase2 = 2,
+         vIn = 3,
+         iPhase3 = 4,
+         vOut = 5,
+         iPhase4 = 6,
+         iOut = 7
+     };
+
+
+     //const uint16_t adc_data_mask = 0xFFF; //12-bits
+
+
+     DMA_CH_TYPE DMA_ADC(CH1);
+     DMA_ADC.setPriority(PRIORITY_VERY_HIGH);
+     DMA_ADC.setTransferDirection(PERIF_TO_MEM);
+     DMA_ADC.setPerifSize(SIZE_16_BIT);
+     DMA_ADC.setMemSize(SIZE_16_BIT);
+     DMA_ADC.setMemIncrement(true);
+     DMA_ADC.setPerifIncrement(false);
+     DMA_ADC.setCircularMode(true);
+     DMA_ADC.setErrorInterrupt(false);
+     DMA_ADC.setMemAddress((uint32_t)adc_data);
+     DMA_ADC.setPerifAddress(0x40012440); //ADC base + ADC_DR offset
+     DMA_ADC.setNumberTransfers(8);
+     DMA_ADC.enableTransferCompleteInterrupt(true);
+     DMA_ADC.enableChannel();
+
+
+     ADC.enable();
+     ADC.startConversion();
 
 	//Infinite loop
-     uint16_t comp_val = 30;
-     uint16_t tim15_val = 0;
-     char receieved = 'x';
+     //uint16_t comp_val = 30;
+     //char receieved = 'x';
+     //volatile uint32_t adc_isr_status = 0;
 	while(1) {
 
-          tim15_val = *tim15_cnt;
+          //adc_isr_status = *(ADC_BASE_ADDR); //Read ISR
 
+          //Detect ADC overrun
+          if (*(ADC_BASE_ADDR) & BIT4) {
+               *(ADC_BASE_ADDR) |= BIT4;
+               UART1.println(fault_message);
+          }
+
+          //togglePinFast(volatile uint32_t *gpio_base, uint8_t pin);
+
+          /*
+          //Convert adc reading from 12 bit to 10 bit, then use lookup table to convert to celius
+          uint8_t temp_c = thermistor_map[(adc_data[thermistor] >> 2)];
+
+          char start[] = "Temperature is: ";
+          char end[] = " degrees C.";
+          UART1.print(start);
+          UART1.sendNumAsASCII(temp_c);
+          UART1.println(end);
+
+          //Delay
+          for (uint32_t i = 0; i < 480000; i++) {}
+          */
+
+          /*
           if (UART1.readAvailable()) {
                receieved = UART1.readChar();
                if (receieved == 'm' && comp_val > 0) {
@@ -155,9 +238,30 @@ __attribute__((section (".entry_point"))) void main(void)  {
                TIM16.setCompValue(TIM16_17_TYPE::CCR_CH1, comp_val);
                TIM17.setCompValue(TIM16_17_TYPE::CCR_CH1, comp_val);
           }
-
+          */
      }
 }
+
+
+
+void ADC1_COMP_IRQHandler(void) {
+     //End of conversion
+     //*(ADC_BASE_ADDR) |= BIT2 | BIT3;
+     //togglePinFast(GPIO_A_BASE_ADDR, 15); //CH1 on scope
+}
+
+
+void DMA1_Channel1_IRQHandler(void) {
+     //End of transfer
+     DMA_BASE_ADDR[1] |= BIT0;
+     GPIO_A_BASE_ADDR[5] ^= (1 << 15);
+}
+
+
+
+
+
+
 
 
 

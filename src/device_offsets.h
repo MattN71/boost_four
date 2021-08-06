@@ -53,6 +53,7 @@
 #define RCC_BASE_ADDR ((volatile uint32_t *)0x40021000)
 #define FLASH_BASE_ADDR ((volatile uint32_t *)0x40022000)
 #define NVIC_BASE_ADDR ((volatile uint32_t *)0xE000E100)
+#define DMA_BASE_ADDR ((volatile uint32_t *)0x40020000)
 
 //Comms
 #define USART1_BASE_ADDR ((volatile uint32_t *)0x40013800)

@@ -34,7 +34,8 @@ extern void main(void);
 //External interrupt handlers
 //extern void TIM3_IRQHandler(void);
 //extern void USART2_IRQHandler(void);
-
+extern void ADC1_COMP_IRQHandler(void);
+extern void DMA1_Channel1_IRQHandler(void);
 
 
 void Default_Handler (void) {
@@ -112,14 +113,14 @@ void (*const intVectorTable[]) (void) __attribute__((section (".vectors"))) = {
   Default_Handler, //EXTI2_3_IRQHandler                /* EXTI Line 2 and 3            */
   Default_Handler, //EXTI4_15_IRQHandler               /* EXTI Line 4 to 15            */
   Default_Handler, //TSC_IRQHandler                    /* TSC                          */
-  Default_Handler, //DMA1_Channel1_IRQHandler          /* DMA1 Channel 1               */
+  DMA1_Channel1_IRQHandler, //DMA1_Channel1_IRQHandler /* DMA1 Channel 1               */
   Default_Handler, //DMA1_Channel2_3_IRQHandler        /* DMA1 Channel 2 and Channel 3 */
   Default_Handler, //DMA1_Channel4_5_6_7_IRQHandler    /* DMA1 Channel 4, Channel 5, Channel 6 and Channel 7*/
-  Default_Handler, //ADC1_COMP_IRQHandler              /* ADC1, COMP1 and COMP2         */
+  ADC1_COMP_IRQHandler, //ADC1_COMP_IRQHandler         /* ADC1, COMP1 and COMP2         */
   Default_Handler, //TIM1_BRK_UP_TRG_COM_IRQHandler    /* TIM1 Break, Update, Trigger and Commutation */
   Default_Handler, //TIM1_CC_IRQHandler                /* TIM1 Capture Compare         */
   Default_Handler, //TIM2_IRQHandler                   /* TIM2                         */
-  Default_Handler, 		                          	     /* TIM3                         */
+  Default_Handler, 		                          	/* TIM3                         */
   Default_Handler, //TIM6_DAC_IRQHandler               /* TIM6 and DAC                 */
   Default_Handler, //TIM7_IRQHandler                   /* TIM7                         */
   Default_Handler, //TIM14_IRQHandler                  /* TIM14                        */
@@ -131,7 +132,7 @@ void (*const intVectorTable[]) (void) __attribute__((section (".vectors"))) = {
   Default_Handler, //SPI1_IRQHandler                   /* SPI1                         */
   Default_Handler, //SPI2_IRQHandler                   /* SPI2                         */
   Default_Handler, //USART1_IRQHandler                 /* USART1                       */
-  Default_Handler,                 			               /* USART2                       */
+  Default_Handler,                 			     /* USART2                       */
   Default_Handler, //USART3_4_IRQHandler               /* USART3 and USART4            */
   Default_Handler, //CEC_CAN_IRQHandler                /* CEC and CAN                  */
   Default_Handler  //USB_IRQHandler                    /* USB                          */

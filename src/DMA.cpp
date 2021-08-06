@@ -1,4 +1,5 @@
 #include "DMA.h"
+#include "device_offsets.h"
 
 //DMA channel assignments:
 // 1. ADC
@@ -143,6 +144,16 @@ void DMA_CH_TYPE::setErrorInterrupt(bool err_int) {
 		*CCR &= ~(1 << 3);
 	}
 }
+
+void DMA_CH_TYPE::enableTransferCompleteInterrupt(bool trans_int) {
+	if (trans_int) {
+		*CCR |= BIT1;
+	} else {
+		*CCR &= ~BIT1;
+	}
+}
+
+
 
 void DMA_CH_TYPE::setNumberTransfers(uint16_t num) {
 	*CNDTR = num;

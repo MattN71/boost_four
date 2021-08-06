@@ -6,12 +6,12 @@
 #define LOW false
 
 enum dma_channel_type {
-	CH1 = 1, 
-	CH2 = 2, 
-	CH3 = 3, 
-	CH4 = 4, 
-	CH5 = 5, 
-	CH6 = 6, 
+	CH1 = 1,
+	CH2 = 2,
+	CH3 = 3,
+	CH4 = 4,
+	CH5 = 5,
+	CH6 = 6,
 	CH7 = 7
 };
 
@@ -39,7 +39,7 @@ private:
 	uint32_t HTIF_mask;
 	uint32_t TCIF_mask;
 	uint32_t GIF_mask;
-	
+
 	//Same for all channels
 	volatile uint32_t* BASE_ADDR;
 	volatile uint32_t* ISR;
@@ -56,20 +56,21 @@ public:
 	DMA_CH_TYPE(dma_channel_type channel);
 
 	//Methods
-	void resetChannel(void); 
+	void resetChannel(void);
 	bool checkErrorIntFlag(void);
 	void resetErrorIntFlag(void);
 	void setPriority(dma_priority_type prior);
-	
+
 	void setMemSize(dma_size_type size);
 	void setPerifSize(dma_size_type size);
-	
+
 	void setMemIncrement(bool m_inc);
 	void setPerifIncrement(bool p_inc);
-	
+
 	void setCircularMode(bool circ_mode);
 	void setTransferDirection(dma_direction_type dir);
 	void setErrorInterrupt(bool err_int);
+	void enableTransferCompleteInterrupt(bool trans_int);
 
 	void setNumberTransfers(uint16_t num);
 	void setMemAddress(uint32_t addr);

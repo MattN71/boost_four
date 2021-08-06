@@ -91,6 +91,36 @@ void USART_TYPE::sendBytes(size_t numBytes, uint8_t* start) {
 	}
 }
 
+
+//Convert uint8_t to human-readable ascii number
+void USART_TYPE::sendNumAsASCII(uint8_t num) {
+	uint8_t digits[3];
+	digits[0] = num / 100;
+	digits[1] = num / 10;
+	while (digits[1] > 9) {
+		digits[1] -= 10;
+	}
+	digits[2] = (num & 0xF);
+	if (digits[2] > 9) {
+		digits[2] -= 10;
+	}
+
+	digits[0] += '0';
+	digits[1] += '0';
+	digits[2] += '0';
+
+	if (digits[0] > '0') {
+		sendBytes(3, digits);
+	} else {
+		if (digits[1] > '0') {
+			sendBytes(2, &digits[1]);
+		} else {
+			sendBytes(1, &digits[2]);
+		}
+	}
+}
+
+
 bool USART_TYPE::readAvailable(void) {
 	return (REG[ISR] & BIT5);
 }

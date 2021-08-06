@@ -41,6 +41,7 @@ public:
      void print(char *start);
      void println(char *start);
      void sendBytes(size_t numBytes, uint8_t* start);
+     void sendNumAsASCII(uint8_t num);
 
      //Read functions
      bool readAvailable(void);
