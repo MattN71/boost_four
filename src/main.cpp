@@ -12,6 +12,9 @@
 
 extern const uint8_t thermistor_map[];
 
+
+
+
 void init_io(void) {
 
     // ******** Analog inputs ********
@@ -87,7 +90,7 @@ __attribute__((section (".entry_point"))) void main(void)  {
 	//Setup GPIO for I/O and alternate functions
 	init_io();
 
-     /*
+
 	//Setup timers for 4-phase interleaved PWM
 	TIM2_3_TYPE TIM2(TIM2_BASE_ADDR);
      TIM2.setTopValue(120);
@@ -124,13 +127,12 @@ __attribute__((section (".entry_point"))) void main(void)  {
      *tim16_cnt = (60 + 8);
      *tim17_cnt = (90 + 12);
 
-     */
+
 
      USART_TYPE UART1(USART_TYPE::USART1_PERIF, USART_TYPE::BAUD_2M);
 
      char message[] = "Hello World!";
      UART1.println(message);
-
      char fault_message[] = "ADC Overrun!";
 
 
@@ -159,8 +161,7 @@ __attribute__((section (".entry_point"))) void main(void)  {
      //Enable DMA-CH1 interrupt in NVIC-ISER register
      *(NVIC_BASE_ADDR) |= BIT9;
 
-
-     uint16_t adc_data[8];
+     volatile uint16_t adc_data[8]; //Getting optimized out?
      enum adc_data_index {
          iPhase1 = 0,
          thermistor = 1,
@@ -199,9 +200,13 @@ __attribute__((section (".entry_point"))) void main(void)  {
      //uint16_t comp_val = 30;
      //char receieved = 'x';
      //volatile uint32_t adc_isr_status = 0;
+
+     char start[] = "Temperature is: ";
+     char end[] = " degrees C.";
+
+
 	while(1) {
 
-          //adc_isr_status = *(ADC_BASE_ADDR); //Read ISR
 
           //Detect ADC overrun
           if (*(ADC_BASE_ADDR) & BIT4) {
@@ -211,34 +216,18 @@ __attribute__((section (".entry_point"))) void main(void)  {
 
           //togglePinFast(volatile uint32_t *gpio_base, uint8_t pin);
 
-          /*
+
           //Convert adc reading from 12 bit to 10 bit, then use lookup table to convert to celius
           uint8_t temp_c = thermistor_map[(adc_data[thermistor] >> 2)];
 
-          char start[] = "Temperature is: ";
-          char end[] = " degrees C.";
+
           UART1.print(start);
           UART1.sendNumAsASCII(temp_c);
           UART1.println(end);
 
           //Delay
-          for (uint32_t i = 0; i < 480000; i++) {}
-          */
+          //for (uint32_t i = 0; i < 480000; i++) {}
 
-          /*
-          if (UART1.readAvailable()) {
-               receieved = UART1.readChar();
-               if (receieved == 'm' && comp_val > 0) {
-                    comp_val -= 1;
-               } else if (receieved == 'p' && comp_val <= 120) {
-                    comp_val += 1;
-               }
-               TIM2.setCompValue(TIM2_3_TYPE::CCR_CH2, comp_val);
-               TIM3.setCompValue(TIM2_3_TYPE::CCR_CH2, comp_val);
-               TIM16.setCompValue(TIM16_17_TYPE::CCR_CH1, comp_val);
-               TIM17.setCompValue(TIM16_17_TYPE::CCR_CH1, comp_val);
-          }
-          */
      }
 }
 
@@ -256,34 +245,3 @@ void DMA1_Channel1_IRQHandler(void) {
      DMA_BASE_ADDR[1] |= BIT0;
      GPIO_A_BASE_ADDR[5] ^= (1 << 15);
 }
-
-
-
-
-
-
-
-
-
-//Debugging code
-/*
-
-	//MCO on PA8
-	initPin(GPIO_A_BASE_ADDR, 8, GPIO_MODE_ALTERNATE, GPIO_DRIVE_PP, GPIO_RESISTOR_NONE, GPIO_SPEED_HIGH);
-	initPinAlt(GPIO_A_BASE_ADDR, 8, AF0);
-
-
-	//Drive P1_EN high
-	initPin(GPIO_A_BASE_ADDR, 15, GPIO_MODE_OUTPUT, GPIO_DRIVE_PP, GPIO_RESISTOR_NONE, GPIO_SPEED_HIGH);
-	drivePinFast(GPIO_A_BASE_ADDR, 15, true);
-
-	//Pause for a couple seconds
-	uint32_t j;
-	for (uint32_t i = 0; i < 36000000; i++) {
-		//Do nothing
-		j = i;
-	}
-
-
-
-*/

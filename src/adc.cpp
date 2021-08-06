@@ -6,13 +6,12 @@
 //Constructor
 ADC_TYPE::ADC_TYPE(void) {
      REG = ADC_BASE_ADDR;
-     //debugging - set to 6 bit resolution
-     REG[CFGR1] |= BIT4 | BIT3;
 }
 
 //Methods
 void ADC_TYPE::enable(void) {
      //Calibrate
+     /*
      REG[CR] &= ~(BIT0);
      bool dma_en = REG[CFGR1] & BIT0; //Save dma state
      REG[CFGR1] &= ~(BIT0);
@@ -21,7 +20,7 @@ void ADC_TYPE::enable(void) {
      if (dma_en) {
           REG[CFGR1] |= BIT0;
      }
-
+     */
      //Enable
      REG[ISR] |= BIT0;
      do {
