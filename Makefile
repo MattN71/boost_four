@@ -4,7 +4,7 @@ program_OBJS := $(wildcard build/*.o)
 
 TOOLCHAIN := arm-none-eabi
 
-CFLAGS := -mfloat-abi=soft -mcpu=cortex-m0 -mthumb -O0 -Wall -Wextra -std=c++17 --specs=nosys.specs -nostdlib -fno-unwind-tables -fno-exceptions -fno-non-call-exceptions -fno-rtti  -fno-use-cxa-atexit -ffreestanding -g3
+CFLAGS := -mfloat-abi=soft -mcpu=cortex-m0 -mthumb -O3 -Wall -Wextra -std=c++17 --specs=nosys.specs -nostdlib -fno-unwind-tables -fno-exceptions -fno-non-call-exceptions -fno-rtti  -fno-use-cxa-atexit -ffreestanding -g3
 LDFLAGS := -lgcc
 
 .PHONY: all
@@ -42,6 +42,10 @@ debug:
 print:
 	$(info	srcs are $(program_SRCS))
 	$(info	objs are $(program_OBJS))
+
+.PHONY: size
+size: all
+	$(TOOLCHAIN)-size -A -t -d build/$(program_name).elf
 
 
 # Serial port
