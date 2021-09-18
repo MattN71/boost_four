@@ -149,6 +149,7 @@ __attribute__((section (".entry_point"))) void main(void)  {
      initPinAlt(GPIO_B_BASE_ADDR, 14, AF1);
 
 
+
      ADC_TYPE ADC;
      ADC.selectChannels(0xFF); //CH0-CH7
      ADC.setConversionMode(ADC_TYPE::ADC_DISCONTINUOUS_MODE);
