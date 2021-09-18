@@ -71,7 +71,7 @@ extern const uint8_t thermistor_map[1024] = {
 };
 
 //Maps 12-bit ADC reading to current in milliamps.
-extern const uint16_t current_sense_map[4095] = {
+extern const uint16_t current_sense_map[4096] = {
    0,    2,    4,    6,    9,   11,   13,   16,   18,   20,   23,   25,   27,   29,   32,   34,
   36,   39,   41,   43,   46,   48,   50,   52,   55,   57,   59,   62,   64,   66,   69,   71,
   73,   75,   78,   80,   82,   85,   87,   89,   92,   94,   96,   99,  101,  103,  105,  108,
@@ -331,7 +331,7 @@ extern const uint16_t current_sense_map[4095] = {
 };
 
 //Maps 12-bit ADC reading to voltage in millivolts.
-extern const uint16_t voltage_sense_map[4095] = {
+extern const uint16_t voltage_sense_map[4096] = {
     0,     8,    17,    26,    35,    44,    53,    62,    70,    79,    88,    97,   106,   115,   124,   132,
   141,   150,   159,   168,   177,   186,   195,   203,   212,   221,   230,   239,   248,   257,   265,   274,
   283,   292,   301,   310,   319,   327,   336,   345,   354,   363,   372,   381,   390,   398,   407,   416,

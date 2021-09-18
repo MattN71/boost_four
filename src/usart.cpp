@@ -121,6 +121,13 @@ void USART_TYPE::sendNumAsASCII(uint8_t num) {
 }
 
 
+
+
+
+
+
+
+
 bool USART_TYPE::readAvailable(void) {
 	return (REG[ISR] & BIT5);
 }
@@ -132,4 +139,31 @@ char USART_TYPE::readChar(void) {
 	} else {
 		return '\0';
 	}
+}
+
+
+
+void USART_TYPE::enableInterrupt(INTERRUPT_TYPE interrupt, bool setting) {
+	//	switch (interrupt) {
+	//		case
+	//	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void USART1_IRQHandler(void) {
+
+
 }

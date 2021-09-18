@@ -71,6 +71,8 @@ public:
 	void setTransferDirection(dma_direction_type dir);
 	void setErrorInterrupt(bool err_int);
 	void enableTransferCompleteInterrupt(bool trans_int);
+	void enableHalfTransferInterrupt(bool trans_int);
+
 
 	void setNumberTransfers(uint16_t num);
 	void setMemAddress(uint32_t addr);

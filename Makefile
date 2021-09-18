@@ -4,7 +4,7 @@ program_OBJS := $(wildcard build/*.o)
 
 TOOLCHAIN := arm-none-eabi
 
-CFLAGS := -mfloat-abi=soft -mcpu=cortex-m0 -mthumb -O3 -Wall -Wextra -std=c++17 --specs=nosys.specs -nostdlib -fno-unwind-tables -fno-exceptions -fno-non-call-exceptions -fno-rtti  -fno-use-cxa-atexit -ffreestanding -g3
+CFLAGS := -mfloat-abi=soft -mcpu=cortex-m0 -mthumb -O0 -Wall -Wextra -std=c++17 --specs=nosys.specs -nostdlib -fno-unwind-tables -fno-exceptions -fno-non-call-exceptions -fno-rtti  -fno-use-cxa-atexit -ffreestanding -g3
 LDFLAGS := -lgcc
 
 .PHONY: all

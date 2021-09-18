@@ -32,10 +32,9 @@ extern void main(void);
 
 
 //External interrupt handlers
-//extern void TIM3_IRQHandler(void);
-//extern void USART2_IRQHandler(void);
 extern void ADC1_COMP_IRQHandler(void);
 extern void DMA1_Channel1_IRQHandler(void);
+extern void USART1_IRQHandler(void);
 
 
 void Default_Handler (void) {
@@ -131,7 +130,7 @@ void (*const intVectorTable[]) (void) __attribute__((section (".vectors"))) = {
   Default_Handler, //I2C2_IRQHandler                   /* I2C2                         */
   Default_Handler, //SPI1_IRQHandler                   /* SPI1                         */
   Default_Handler, //SPI2_IRQHandler                   /* SPI2                         */
-  Default_Handler, //USART1_IRQHandler                 /* USART1                       */
+  USART1_IRQHandler, //USART1_IRQHandler               /* USART1                       */
   Default_Handler,                 			     /* USART2                       */
   Default_Handler, //USART3_4_IRQHandler               /* USART3 and USART4            */
   Default_Handler, //CEC_CAN_IRQHandler                /* CEC and CAN                  */

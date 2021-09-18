@@ -153,6 +153,14 @@ void DMA_CH_TYPE::enableTransferCompleteInterrupt(bool trans_int) {
 	}
 }
 
+void DMA_CH_TYPE::enableHalfTransferInterrupt(bool trans_int) {
+	if (trans_int) {
+		*CCR |= BIT2;
+	} else {
+		*CCR &= ~BIT2;
+	}
+}
+
 
 
 void DMA_CH_TYPE::setNumberTransfers(uint16_t num) {

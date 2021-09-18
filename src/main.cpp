@@ -11,8 +11,8 @@
 #include "adc.h"
 
 extern const uint8_t thermistor_map[];
-
-
+extern const uint16_t current_sense_map[];
+extern const uint16_t voltage_sense_map[];
 
 
 void init_io(void) {
@@ -92,27 +92,31 @@ __attribute__((section (".entry_point"))) void main(void)  {
 
 
 	//Setup timers for 4-phase interleaved PWM
+     //Phase 1
 	TIM2_3_TYPE TIM2(TIM2_BASE_ADDR);
      TIM2.setTopValue(120);
-     TIM2.setCompValue(TIM2_3_TYPE::CCR_CH2, 30);
+     TIM2.setCompValue(TIM2_3_TYPE::CCR_CH2, 0);
      TIM2.setupPWM();
      TIM2.startTimer();
 
+     //Phase 2
      TIM2_3_TYPE TIM3(TIM3_BASE_ADDR);
      TIM3.setTopValue(120);
-     TIM3.setCompValue(TIM2_3_TYPE::CCR_CH2, 30);
+     TIM3.setCompValue(TIM2_3_TYPE::CCR_CH2, 0);
      TIM3.setupPWM();
      TIM3.startTimer();
 
+     //Phase 3
      TIM16_17_TYPE TIM16(TIM16_BASE_ADDR);
      TIM16.setTopValue(120);
-     TIM16.setCompValue(TIM16_17_TYPE::CCR_CH1, 30);
+     TIM16.setCompValue(TIM16_17_TYPE::CCR_CH1, 0);
      TIM16.setupPWM();
      TIM16.startTimer();
 
+     //Phase 4
      TIM16_17_TYPE TIM17(TIM17_BASE_ADDR);
      TIM17.setTopValue(120);
-     TIM17.setCompValue(TIM16_17_TYPE::CCR_CH1, 30);
+     TIM17.setCompValue(TIM16_17_TYPE::CCR_CH1, 0);
      TIM17.setupPWM();
      TIM17.startTimer();
 
@@ -161,7 +165,7 @@ __attribute__((section (".entry_point"))) void main(void)  {
      //Enable DMA-CH1 interrupt in NVIC-ISER register
      *(NVIC_BASE_ADDR) |= BIT9;
 
-     volatile uint16_t adc_data[8]; //Getting optimized out?
+     volatile uint16_t adc_data[8];
      enum adc_data_index {
          iPhase1 = 0,
          thermistor = 1,
@@ -190,6 +194,7 @@ __attribute__((section (".entry_point"))) void main(void)  {
      DMA_ADC.setPerifAddress(0x40012440); //ADC base + ADC_DR offset
      DMA_ADC.setNumberTransfers(8);
      DMA_ADC.enableTransferCompleteInterrupt(true);
+     DMA_ADC.enableHalfTransferInterrupt(true);
      DMA_ADC.enableChannel();
 
 
@@ -201,10 +206,6 @@ __attribute__((section (".entry_point"))) void main(void)  {
      //char receieved = 'x';
      //volatile uint32_t adc_isr_status = 0;
 
-     char start[] = "Temperature is: ";
-     char end[] = " degrees C.";
-
-
 	while(1) {
 
 
@@ -214,16 +215,66 @@ __attribute__((section (".entry_point"))) void main(void)  {
                UART1.println(fault_message);
           }
 
+          /*
+          UART1.print("Phase 1 Current = ");
+          UART1.sendNumAsASCII(current_sense_map[adc_data[iPhase1]] / 10);
+          UART1.println(".");
+
+          UART1.print("Phase 2 Current = ");
+          UART1.sendNumAsASCII(current_sense_map[adc_data[iPhase2]] / 10);
+          UART1.println(".");
+
+          UART1.print("Phase 3 Current = ");
+          UART1.sendNumAsASCII(current_sense_map[adc_data[iPhase3]] / 10);
+          UART1.println(".");
+
+          UART1.print("Phase 4 Current = ");
+          UART1.sendNumAsASCII(current_sense_map[adc_data[iPhase4]] / 10);
+          UART1.println(".");
+
+          UART1.print("Ambient Temp = ");
+          UART1.sendNumAsASCII(thermistor_map[adc_data[thermistor] >> 2]);
+          UART1.println("Degrees C.");
+
+          UART1.println("**********************");
+          */
+
+          uint16_t phase1_ma = current_sense_map[adc_data[iPhase1]];
+          uint16_t phase2_ma = current_sense_map[adc_data[iPhase2]];
+          uint16_t phase3_ma = current_sense_map[adc_data[iPhase3]];
+          uint16_t phase4_ma = current_sense_map[adc_data[iPhase4]];
+          uint8_t ambient_temp = thermistor_map[adc_data[thermistor] >> 2];
+          uint16_t output_voltage = voltage_sense_map[adc_data[vOut]];
+
           //togglePinFast(volatile uint32_t *gpio_base, uint8_t pin);
 
 
-          //Convert adc reading from 12 bit to 10 bit, then use lookup table to convert to celius
-          uint8_t temp_c = thermistor_map[(adc_data[thermistor] >> 2)];
+          if (UART1.readAvailable()) {
+               static uint8_t new_comp = 0;
+               char readin = UART1.readChar();
+               if (readin == 'p') {
+                    if (new_comp < 120) {
+                         new_comp += 1;
+                         TIM17.setCompValue(TIM16_17_TYPE::CCR_CH1, new_comp);
+                    }
+               } else if (readin == 'm') {
+                    if (new_comp > 0) {
+                         new_comp -= 1;
+                         TIM17.setCompValue(TIM16_17_TYPE::CCR_CH1, new_comp);
+                    }
+               } else if (readin == 'd') {
+                    drivePin(GPIO_B_BASE_ADDR, 7, LOW);
+               } else if (readin == 'e') {
+                    drivePin(GPIO_B_BASE_ADDR, 7, HIGH);
+               }
+          }
 
 
-          UART1.print(start);
-          UART1.sendNumAsASCII(temp_c);
-          UART1.println(end);
+
+
+          //UART1.print(start);
+          //UART1.sendNumAsASCII(temp_c);
+          //UART1.println(end);
 
           //Delay
           //for (uint32_t i = 0; i < 480000; i++) {}
@@ -241,7 +292,27 @@ void ADC1_COMP_IRQHandler(void) {
 
 
 void DMA1_Channel1_IRQHandler(void) {
-     //End of transfer
-     DMA_BASE_ADDR[1] |= BIT0;
-     GPIO_A_BASE_ADDR[5] ^= (1 << 15);
+
+     //ADC data to use in control loop
+     static volatile uint16_t adc_data_isr[8];
+
+
+     if (DMA_BASE_ADDR[0] & BIT1) {
+          //End of transfer
+          DMA_BASE_ADDR[1] |= BIT1;
+          //GPIO_A_BASE_ADDR[5] ^= (1 << 15);
+          for (size_t i = 4; i < 8; i++) {
+               //adc_data_isr[i] = adc_data[i];
+          }
+     }
+
+     if (DMA_BASE_ADDR[0] & BIT2) {
+          //Half transfer
+          DMA_BASE_ADDR[1] |= BIT2;
+          //GPIO_B_BASE_ADDR[5] ^= (1 << 4);
+          for (size_t i = 0; i < 4; i++) {
+               //adc_data_isr[i] = adc_data[i];
+          }
+
+     }
 }

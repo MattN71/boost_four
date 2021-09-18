@@ -11,7 +11,6 @@ ADC_TYPE::ADC_TYPE(void) {
 //Methods
 void ADC_TYPE::enable(void) {
      //Calibrate
-     /*
      REG[CR] &= ~(BIT0);
      bool dma_en = REG[CFGR1] & BIT0; //Save dma state
      REG[CFGR1] &= ~(BIT0);
@@ -20,7 +19,7 @@ void ADC_TYPE::enable(void) {
      if (dma_en) {
           REG[CFGR1] |= BIT0;
      }
-     */
+
      //Enable
      REG[ISR] |= BIT0;
      do {
