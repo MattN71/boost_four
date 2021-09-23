@@ -15,6 +15,31 @@ extern const uint16_t current_sense_map[];
 extern const uint16_t voltage_sense_map[];
 
 
+volatile uint16_t adc_data[8] __attribute__ ((aligned));
+volatile uint16_t adc_data_buffered[8] __attribute__ ((aligned));
+
+//Flags set during control loop processing 
+volatile bool current_loop_running = false;
+volatile bool voltage_loop_running = false;
+
+//Number of phases active, bits 1-4 represent phases 1-4 (bit 0 not used)
+volatile uint32_t active_phases = 0x0;
+
+enum adc_data_index {
+     iPhase1 = 0,
+     thermistor = 1,
+     iPhase2 = 2,
+     vIn = 3,
+     iPhase3 = 4,
+     vOut = 5,
+     iPhase4 = 6,
+     iOut = 7
+};
+
+
+
+
+
 void init_io(void) {
 
     // ******** Analog inputs ********
@@ -77,21 +102,8 @@ void init_io(void) {
 }
 
 
-//Main function, section attribute makes sure it is at the beginning of .text
-__attribute__((section (".entry_point"))) void main(void)  {
-
-
-
-     RCC RCC1;
-
-     //Setup system clock, peripheral clocks
-	RCC1.init();
-
-	//Setup GPIO for I/O and alternate functions
-	init_io();
-
-
-	//Setup timers for 4-phase interleaved PWM
+void init_timers(void) {
+     //Setup timers for 4-phase interleaved PWM
      //Phase 1
 	TIM2_3_TYPE TIM2(TIM2_BASE_ADDR);
      TIM2.setTopValue(120);
@@ -119,7 +131,10 @@ __attribute__((section (".entry_point"))) void main(void)  {
      TIM17.setCompValue(TIM16_17_TYPE::CCR_CH1, 0);
      TIM17.setupPWM();
      TIM17.startTimer();
+}
 
+void sync_pwm_timers(void) {
+     //Sync timers for interleaved pwm 
      volatile uint32_t* tim2_cnt = TIM2.getCountReg();
      volatile uint32_t* tim3_cnt = TIM3.getCountReg();
      volatile uint32_t* tim16_cnt = TIM16.getCountReg();
@@ -130,16 +145,11 @@ __attribute__((section (".entry_point"))) void main(void)  {
      *tim3_cnt = (30 + 4);
      *tim16_cnt = (60 + 8);
      *tim17_cnt = (90 + 12);
+}
 
-
-
-     USART_TYPE UART1(USART_TYPE::USART1_PERIF, USART_TYPE::BAUD_2M);
-
-     char message[] = "Hello World!";
-     UART1.println(message);
-     char fault_message[] = "ADC Overrun!";
-
-
+void setup_adc(void) {
+     
+     //Setup ADC timer trigger
      TIM15_TYPE TIM15;
      TIM15.setTopValue(124);
      TIM15.setCompValue(TIM15_TYPE::CCR_CH1, 60);
@@ -148,8 +158,7 @@ __attribute__((section (".entry_point"))) void main(void)  {
      initPin(GPIO_B_BASE_ADDR, 14, GPIO_MODE_ALTERNATE, GPIO_DRIVE_PP, GPIO_RESISTOR_NONE, GPIO_SPEED_HIGH);
      initPinAlt(GPIO_B_BASE_ADDR, 14, AF1);
 
-
-
+     //Setup ADC peripheral
      ADC_TYPE ADC;
      ADC.selectChannels(0xFF); //CH0-CH7
      ADC.setConversionMode(ADC_TYPE::ADC_DISCONTINUOUS_MODE);
@@ -163,25 +172,7 @@ __attribute__((section (".entry_point"))) void main(void)  {
      //Enable ADC interrupt in NVIC-ISER register
      //*(NVIC_BASE_ADDR) |= BIT12;
 
-     //Enable DMA-CH1 interrupt in NVIC-ISER register
-     *(NVIC_BASE_ADDR) |= BIT9;
-
-     volatile uint16_t adc_data[8];
-     enum adc_data_index {
-         iPhase1 = 0,
-         thermistor = 1,
-         iPhase2 = 2,
-         vIn = 3,
-         iPhase3 = 4,
-         vOut = 5,
-         iPhase4 = 6,
-         iOut = 7
-     };
-
-
-     //const uint16_t adc_data_mask = 0xFFF; //12-bits
-
-
+     //Setup DMA transfer
      DMA_CH_TYPE DMA_ADC(CH1);
      DMA_ADC.setPriority(PRIORITY_VERY_HIGH);
      DMA_ADC.setTransferDirection(PERIF_TO_MEM);
@@ -198,56 +189,104 @@ __attribute__((section (".entry_point"))) void main(void)  {
      DMA_ADC.enableHalfTransferInterrupt(true);
      DMA_ADC.enableChannel();
 
+     //Enable DMA-CH1 interrupt in NVIC-ISER register
+     *(NVIC_BASE_ADDR) |= BIT9;
+
 
      ADC.enable();
      ADC.startConversion();
 
-	//Infinite loop
-     //uint16_t comp_val = 30;
-     //char receieved = 'x';
-     //volatile uint32_t adc_isr_status = 0;
+}
 
+void e_stop(void) {
+     //Disable all phases
+     drivePin(GPIO_A_BASE_ADDR, 15, LOW);
+     drivePin(GPIO_B_BASE_ADDR, 4, LOW);
+     drivePin(GPIO_B_BASE_ADDR, 6, LOW);
+     drivePin(GPIO_B_BASE_ADDR, 7, LOW);
+
+     //Drive power-good output low
+     drivePin(GPIO_B_BASE_ADDR, 15, LOW);
+
+     //Reset all PWM channel to 0% duty cycle
+     TIM2.setCompValue(TIM2_3_TYPE::CCR_CH2, 0);
+     TIM3.setCompValue(TIM2_3_TYPE::CCR_CH2, 0);
+     TIM16.setCompValue(TIM16_17_TYPE::CCR_CH1, 0);
+     TIM17.setCompValue(TIM16_17_TYPE::CCR_CH1, 0);
+
+     UART1.println("Shutting down...");
+}
+
+//Main function, section attribute makes sure it is at the beginning of .text
+__attribute__((section (".entry_point"))) void main(void)  {
+
+
+     //Clock system class
+     RCC RCC1;
+
+     //Setup system clock, peripheral clocks
+	RCC1.init();
+
+     //Setup UART comms , 2 Mbaud
+     USART_TYPE UART1(USART_TYPE::USART1_PERIF, USART_TYPE::BAUD_2M);
+
+	//Setup GPIO for I/O and alternate functions
+	UART1.println("Initializing I/O");
+     init_io();
+
+     //Initialize timers for PWM outputs
+     UART1.println("Initializing timers");
+     init_timers();
+
+     //Synchronize timers for interleaved operation
+     UART1.println("Synchronizing timers");     
+     sync_pwm_timers();
+
+     //Setup ADC 
+     UART1.println("Initializing ADC and DMA");   
+     setup_adc();
+     
+
+
+
+
+     //Main Processing loop
 	while(1) {
 
 
           //Detect ADC overrun
           if (*(ADC_BASE_ADDR) & BIT4) {
                *(ADC_BASE_ADDR) |= BIT4;
-               UART1.println(fault_message);
+               e_stop();
+               UART1.println("ADC Overrun!");
           }
 
-          /*
-          UART1.print("Phase 1 Current = ");
-          UART1.sendNumAsASCII(current_sense_map[adc_data[iPhase1]] / 10);
-          UART1.println(".");
+          //Detect over-voltage on output
+          if (voltage_sense_map[adc_data[vOut]] > 32000) {
+               e_stop();
+               UART1.println("Over-voltage fault!");
+          }
 
-          UART1.print("Phase 2 Current = ");
-          UART1.sendNumAsASCII(current_sense_map[adc_data[iPhase2]] / 10);
-          UART1.println(".");
+          //Detect over-currents
+          if (current_sense_map[adc_data[iPhase1]] > 8000) {
+               e_stop();
+               UART1.println("Over-current fault on phase 1!");
+          }
 
-          UART1.print("Phase 3 Current = ");
-          UART1.sendNumAsASCII(current_sense_map[adc_data[iPhase3]] / 10);
-          UART1.println(".");
+          if (current_sense_map[adc_data[iPhase2]] > 8000) {
+               e_stop();
+               UART1.println("Over-current fault on phase 2!");
+          }
 
-          UART1.print("Phase 4 Current = ");
-          UART1.sendNumAsASCII(current_sense_map[adc_data[iPhase4]] / 10);
-          UART1.println(".");
+          if (current_sense_map[adc_data[iPhase3]] > 8000) {
+               e_stop();
+               UART1.println("Over-current fault on phase 3!");
+          }
 
-          UART1.print("Ambient Temp = ");
-          UART1.sendNumAsASCII(thermistor_map[adc_data[thermistor] >> 2]);
-          UART1.println("Degrees C.");
-
-          UART1.println("**********************");
-          */
-
-          uint16_t phase1_ma = current_sense_map[adc_data[iPhase1]];
-          uint16_t phase2_ma = current_sense_map[adc_data[iPhase2]];
-          uint16_t phase3_ma = current_sense_map[adc_data[iPhase3]];
-          uint16_t phase4_ma = current_sense_map[adc_data[iPhase4]];
-          uint8_t ambient_temp = thermistor_map[adc_data[thermistor] >> 2];
-          uint16_t output_voltage = voltage_sense_map[adc_data[vOut]];
-
-          //togglePinFast(volatile uint32_t *gpio_base, uint8_t pin);
+          if (current_sense_map[adc_data[iPhase4]] > 8000) {
+               e_stop();
+               UART1.println("Over-current fault on phase 4!");
+          }
 
 
           if (UART1.readAvailable()) {
@@ -293,27 +332,68 @@ void ADC1_COMP_IRQHandler(void) {
 
 
 void DMA1_Channel1_IRQHandler(void) {
-
-     //ADC data to use in control loop
-     static volatile uint16_t adc_data_isr[8];
-
+     static uint32_t transfer_counter = 0;
 
      if (DMA_BASE_ADDR[0] & BIT1) {
           //End of transfer
-          DMA_BASE_ADDR[1] |= BIT1;
-          //GPIO_A_BASE_ADDR[5] ^= (1 << 15);
+          DMA_BASE_ADDR[1] |= BIT1; //Clear flag
+         
+          //Make sure not still processing before we overwrite the buffered_adc_data
+          //array used for the control loops
+          if (current_loop_running || voltage_loop_running) {
+               e_stop();
+               UART1.println("Control loop in progress during adc refresh!");
+          }
+
           for (size_t i = 4; i < 8; i++) {
-               //adc_data_isr[i] = adc_data[i];
+               adc_data_buffered[i] = adc_data[i];
+          }
+
+          //Run current loop at 48 kHz, voltage loop at 6 kHz
+          transfer_counter += 1;
+          current_loop();
+          if (transfer_counter & 0x7) {
+               voltage_loop();
           }
      }
 
      if (DMA_BASE_ADDR[0] & BIT2) {
           //Half transfer
-          DMA_BASE_ADDR[1] |= BIT2;
-          //GPIO_B_BASE_ADDR[5] ^= (1 << 4);
+          DMA_BASE_ADDR[1] |= BIT2; //Clear flag
+          
+          //Make sure not still processing before we overwrite the buffered_adc_data
+          //array used for the control loops
+          if (current_loop_running || voltage_loop_running) {
+               e_stop();
+               UART1.println("Control loop in progress during adc refresh!");
+          }
+          
           for (size_t i = 0; i < 4; i++) {
-               //adc_data_isr[i] = adc_data[i];
+               adc_data_buffered[i] = adc_data[i];
           }
 
      }
 }
+
+void current_loop(void) {
+     if (active_phases & BIT1) {
+
+     }
+
+     if (active_phases & BIT2) {
+          
+     }
+     
+     if (active_phases & BIT3) {
+          
+     }
+     
+     if (active_phases & BIT4) {
+          
+     }
+}
+
+void voltage_loop(void) {
+     
+}
+
