@@ -64,7 +64,7 @@ USART_TYPE::USART_TYPE(USART_PERIF_TYPE usart_perif, BAUD_RATE_TYPE baud_rate) {
 
 //Methods
 
-void USART_TYPE::print(char *start) {
+void USART_TYPE::print(const char *start) {
 	while (*start != '\0') {
 		while (!(REG[ISR] & BIT7));
 		REG[TDR] = *start++;
@@ -72,7 +72,7 @@ void USART_TYPE::print(char *start) {
 }
 
 
-void USART_TYPE::println(char *start) {
+void USART_TYPE::println(const char *start) {
 	while (*start != '\0') {
 		while (!(REG[ISR] & BIT7));
 		REG[TDR] = *start++;

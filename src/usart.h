@@ -42,8 +42,8 @@ public:
      //Methods
 
      //Blocking send functions
-     void print(char *start);
-     void println(char *start);
+     void print(const char *start);
+     void println(const char *start);
      void sendBytes(size_t numBytes, uint8_t* start);
      void sendNumAsASCII(uint8_t num);
 

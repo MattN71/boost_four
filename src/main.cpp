@@ -9,6 +9,15 @@
 #include "usart.h"
 #include "timer15.h"
 #include "adc.h"
+#include "pid.h"
+
+
+static PID_Controller phase_1_pid;
+static PID_Controller phase_2_pid;
+static PID_Controller phase_3_pid;
+static PID_Controller phase_4_pid;
+static PID_Controller voltage_pid;
+
 
 extern const uint8_t thermistor_map[];
 extern const uint16_t current_sense_map[];
@@ -17,13 +26,6 @@ extern const uint16_t voltage_sense_map[];
 
 volatile uint16_t adc_data[8] __attribute__ ((aligned));
 volatile uint16_t adc_data_buffered[8] __attribute__ ((aligned));
-
-//Flags set during control loop processing 
-volatile bool current_loop_running = false;
-volatile bool voltage_loop_running = false;
-
-//Number of phases active, bits 1-4 represent phases 1-4 (bit 0 not used)
-volatile uint32_t active_phases = 0x0;
 
 enum adc_data_index {
      iPhase1 = 0,
@@ -35,6 +37,28 @@ enum adc_data_index {
      iPhase4 = 6,
      iOut = 7
 };
+
+
+//Flags set during control loop processing 
+volatile bool current_loop_running = false;
+volatile bool voltage_loop_running = false;
+
+//Number of phases active
+volatile uint32_t active_phases = BIT1;
+static const uint32_t PHASE1 = BIT1;
+static const uint32_t PHASE2 = BIT2;
+static const uint32_t PHASE3 = BIT3;
+static const uint32_t PHASE4 = BIT4;
+static const uint32_t VOLTAGE_CNTRL = BIT5;
+
+
+
+//Set points for control loops
+volatile uint32_t current_setpoint = 500;
+volatile uint32_t voltage_setpoint = 30000;
+
+
+
 
 
 
@@ -262,28 +286,28 @@ __attribute__((section (".entry_point"))) void main(void)  {
           }
 
           //Detect over-voltage on output
-          if (voltage_sense_map[adc_data[vOut]] > 32000) {
+          if (voltage_sense_map[adc_data[vOut]] >= 30500) {
                e_stop();
                UART1.println("Over-voltage fault!");
           }
 
           //Detect over-currents
-          if (current_sense_map[adc_data[iPhase1]] > 8000) {
+          if (current_sense_map[adc_data[iPhase1]] >= 7700) {
                e_stop();
                UART1.println("Over-current fault on phase 1!");
           }
 
-          if (current_sense_map[adc_data[iPhase2]] > 8000) {
+          if (current_sense_map[adc_data[iPhase2]] >= 7700) {
                e_stop();
                UART1.println("Over-current fault on phase 2!");
           }
 
-          if (current_sense_map[adc_data[iPhase3]] > 8000) {
+          if (current_sense_map[adc_data[iPhase3]] >= 7700) {
                e_stop();
                UART1.println("Over-current fault on phase 3!");
           }
 
-          if (current_sense_map[adc_data[iPhase4]] > 8000) {
+          if (current_sense_map[adc_data[iPhase4]] >= 7700) {
                e_stop();
                UART1.println("Over-current fault on phase 4!");
           }
@@ -330,9 +354,11 @@ void ADC1_COMP_IRQHandler(void) {
      //togglePinFast(GPIO_A_BASE_ADDR, 15); //CH1 on scope
 }
 
-
+//48 kHz interrupt handler for control loops
 void DMA1_Channel1_IRQHandler(void) {
-     static uint32_t transfer_counter = 0;
+     static uint32_t transfer_count = 0;
+
+     static enum controller_state_type {SHUTDOWN, SOFT_START, RUN} controller_state = SHUTDOWN;
 
      if (DMA_BASE_ADDR[0] & BIT1) {
           //End of transfer
@@ -350,9 +376,9 @@ void DMA1_Channel1_IRQHandler(void) {
           }
 
           //Run current loop at 48 kHz, voltage loop at 6 kHz
-          transfer_counter += 1;
+          transfer_count += 1;
           current_loop();
-          if (transfer_counter & 0x7) {
+          if (transfer_count & 0x7) {
                voltage_loop();
           }
      }
@@ -375,25 +401,56 @@ void DMA1_Channel1_IRQHandler(void) {
      }
 }
 
-void current_loop(void) {
-     if (active_phases & BIT1) {
+void current_loop(uint16_t setpoint) {
+     current_loop_running = true;
 
+     static int32_t phase_1_duty = 0;
+     static int32_t phase_2_duty = 0;
+     static int32_t phase_3_duty = 0;
+     static int32_t phase_4_duty = 0;
+     static uint16_t total_current_setpoint = 0;
+
+     if (active_phases & PHASE1) {
+          phase_1_duty += phase_1_pid.execute(current_sense_map[adc_data_buffered[iPhase1]]);
+          phase_1_duty = constrain_num(phase_1_duty, 0, 100);
+          TIM2.setCompValue(TIM2_3_TYPE::CCR_CH2, phase_1_duty);
+          if (phase_1_duty > 70) {
+               //Add feature to fault if current stays above nominal for too long
+          }
      }
 
-     if (active_phases & BIT2) {
-          
+     if (active_phases & PHASE2) {
+          phase_2_duty += phase_2_pid.execute(current_sense_map[adc_data_buffered[iPhase2]]);
+          phase_2_duty = constrain_num(phase_2_duty, 0, 100);
+          TIM3.setCompValue(TIM2_3_TYPE::CCR_CH2, phase_2_duty);
      }
      
-     if (active_phases & BIT3) {
-          
+     if (active_phases & PHASE3) {
+          phase_3_duty += phase_3_pid.execute(current_sense_map[adc_data_buffered[iPhase3]]);
+          phase_3_duty = constrain_num(phase_3_duty, 0, 100);
+          TIM16.setCompValue(TIM16_17_TYPE::CCR_CH1, phase_3_duty);
      }
      
-     if (active_phases & BIT4) {
-          
-     }
+     if (active_phases & PHASE4) {
+          phase_4_duty += phase_4_pid.execute(current_sense_map[adc_data_buffered[iPhase4]]);
+          phase_4_duty = constrain_num(phase_4_duty, 0, 100);
+          TIM17.setCompValue(TIM16_17_TYPE::CCR_CH1, phase_4_duty);
+     }    
+
+     current_loop_running = false;
 }
 
-void voltage_loop(void) {
-     
+void voltage_loop(uint16_t setpoint) {
+     voltage_loop_running = true;
+     if (active_phases & VOLTAGE_CNTRL) {
+          total_current_setpoint += voltage_pid.execute(voltage_sense_map[adc_data_buffered[vOut]]);
+          total_current_setpoint = constrain_num(total_current_setpoint, 0, 30000);
+         //Update later for dynamic phases
+          phase_1_pid.set_setpoint(total_current_setpoint / 4);
+          phase_2_pid.set_setpoint(total_current_setpoint / 4);
+          phase_3_pid.set_setpoint(total_current_setpoint / 4);
+          phase_4_pid.set_setpoint(total_current_setpoint / 4);
+     }
+     voltage_loop_running = false;
 }
 
