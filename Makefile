@@ -1,9 +1,8 @@
-program_name := boost_four
-program_SRCS := $(wildcard src/*.cpp)
+program_name := hardware
+program_SRCS := $(wildcard src/application/*.cpp) $(wildcard src/hardware/*.cpp) $(wildcard src/application/*.c) $(wildcard src/hardware/*.c)
 program_OBJS := $(wildcard build/*.o)
 
 TOOLCHAIN := arm-none-eabi
-
 CFLAGS := -mfloat-abi=soft -mcpu=cortex-m0 -mthumb -O0 -Wall -Wextra -std=c++17 --specs=nosys.specs -nostdlib -fno-unwind-tables -fno-exceptions -fno-non-call-exceptions -fno-rtti  -fno-use-cxa-atexit -ffreestanding -g3
 LDFLAGS := -lgcc
 
@@ -18,8 +17,10 @@ compile: clean
 
 .PHONY: clean
 clean:
-	@rm -f $(program_OBJS)
 	@rm -f $(program_name).elf
+	@rm -f *.o
+	@rm -f build/*.o
+	@rm -f build/$(program_name).elf
 
 .PHONY: sections
 sections: all
